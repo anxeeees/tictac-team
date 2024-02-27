@@ -5,6 +5,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 public class LoginPage implements ActionListener {
     JFrame frame;
     JLabel label_heading, label_username, label_password;
@@ -78,8 +81,35 @@ public class LoginPage implements ActionListener {
 
     }
 
+    public static void main(String[] args) {
+        new LoginPage();
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
-            new LoginPage();
+        if(e.getSource() == button_reg) {
+            new RegisterPage();
+        }
+        if(e.getSource()== button_log) {
+            String username = text_username.getText();
+            String password = text_password.getText();
+            String query = "select from registration where username" + username + "password =" + password;
+            Database db = new Database();
+            ResultSet resultSet = db.select(query);
+
+            try {
+                if(resultSet.next()) {
+                    JOptionPane.showMessageDialog(frame, "Login succ");
+                    new TicTacToe();
+                }
+                else {
+                    JOptionPane.showMessageDialog(frame, "invalid username or pass");
+                }
+
+            }
+            catch (SQLException exception) {
+                exception.printStackTrace();
+            }
+        }
     }
 }
