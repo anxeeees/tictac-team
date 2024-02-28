@@ -15,8 +15,6 @@ public class LoginPage implements ActionListener {
     JPasswordField text_password;
     JButton button_log, button_cancel, button_reg;
 
-    JButton button;
-
     Font fon1, fon2;
 
 
