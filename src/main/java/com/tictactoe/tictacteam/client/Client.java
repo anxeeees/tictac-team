@@ -18,6 +18,14 @@ public class Client {
 
             System.out.println("Connected to Tic Tac Toe Server.");
 
+            System.out.println(in.readLine()); // Server's prompt for username
+            String username = userInput.readLine().trim();
+            out.println(username); // Send username to server
+
+            // Receive server response and display message to user
+            System.out.println(in.readLine());
+
+
             String serverResponse;
             while ((serverResponse = in.readLine()) != null) {
                 System.out.println(serverResponse);
