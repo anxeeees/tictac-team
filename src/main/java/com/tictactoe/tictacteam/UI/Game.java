@@ -1,4 +1,6 @@
-package com.tictactoe.tictacteam;
+package com.tictactoe.tictacteam.UI;
+
+import com.tictactoe.tictacteam.UI.Graphics;
 
 import javax.swing.*;
 

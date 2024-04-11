@@ -8,6 +8,7 @@ import java.util.List;
 public class Server {
     private static final int PORT = 12345;
     private static final List<ClientHandler> clients = new ArrayList<>();
+    private static final List<GameHandler> games = new ArrayList<>();
 
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
