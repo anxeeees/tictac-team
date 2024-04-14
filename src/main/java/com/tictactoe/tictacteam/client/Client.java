@@ -1,46 +1,320 @@
 package com.tictactoe.tictacteam.client;
 
-import java.io.BufferedReader;
+import com.tictactoe.tictacteam.client.ClientGUI;
+import com.tictactoe.tictacteam.client.Gameplay;
+import other.Message;
+import other.MyListener;
+
+import javax.swing.*;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.Observable;
+import java.util.Observer;
 
-public class Client {
-    private static final String SERVER_IP = "127.0.0.1";
-    private static final int SERVER_PORT = 12345;
+import static com.tictactoe.tictacteam.client.ClientGUI.enableAllGameButtons;
 
-    public static void main(String[] args) {
-        try (Socket socket = new Socket(SERVER_IP, SERVER_PORT);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in))) {
-
-            System.out.println("Connected to Tic Tac Toe Server.");
-
-            System.out.println(in.readLine()); // Server's prompt for username
-            String username = userInput.readLine().trim();
-            out.println(username); // Send username to server
-
-            // Receive server response and display message to user
-            System.out.println(in.readLine());
+/**
+ * Created by Administrator on 9/20/2017.
+ */
+public class Client implements Observer
+{
+    private Socket clientSocket;
+    public static String nameAlias;
+    public static boolean newSession;
+    private ObjectOutputStream oos;
+    private MyListener clientListener;
 
 
-            String serverResponse;
-            while ((serverResponse = in.readLine()) != null) {
-                System.out.println(serverResponse);
+    public Client()
+    {
 
-                if (serverResponse.startsWith("Game over")) {
-                    break;
+    }
+
+    public void sendMsg()
+    {
+        Message message = new Message(nameAlias, ClientGUI.textField1.getText());
+
+        try
+        {
+            oos.writeObject(message);
+            ClientGUI.chatArea.append("Me: " + message.getMessage() + "\n");
+            ClientGUI.textField1.setText("");
+        } catch (IOException e1)
+        {
+            e1.printStackTrace();
+        }
+    }
+
+    public void makeMoveButtonPress(JButton button, int id)
+    {
+        Message msg = new Message("", button.getText(), button, id);
+        try
+        {
+            oos.writeObject(msg);
+
+        } catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void disconnect()
+    {
+        Gameplay.continueYesNo(oos, clientSocket, clientListener);
+    }
+
+    public void connect()
+    {
+        try
+        {
+            clientSocket = new Socket(ClientGUI.getIpAddressTextField(), ClientGUI.getPortNumTextField());
+
+            newSession = true;
+            if (newSession)
+            {
+                nameAlias = JOptionPane.showInputDialog("Enter Your Name");
+
+                if (nameAlias.equals(""))
+                {
+                    JOptionPane.showMessageDialog(null, "You must enter a name!");
+                    return;
                 }
+                else if (!nameAlias.isEmpty())
+                {
+                    ClientGUI.connectButton.setEnabled(false);
+                    oos = new ObjectOutputStream(clientSocket.getOutputStream());
+                    ClientGUI.chatArea.append("Connected! waiting for player.....\n");
 
-                // Client's turn
-                String userInputStr = userInput.readLine();
-                out.println(userInputStr);
+                    clientListener = new MyListener(clientSocket, this);
+                    Thread thread1 = new Thread(clientListener);
+                    thread1.start();
+
+                }
             }
 
-        } catch (IOException e) {
+
+
+        } catch (IOException e)
+        {
             e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void update(Observable o, Object arg)
+    {
+        Message message = (Message) arg;
+        String msg = message.getNameAlias() + ": " + message.getMessage();
+        ClientGUI.chatArea.append(msg + "\n");
+
+        if(message.getMessage().compareTo("you can start talking") == 0)
+        {
+            ClientGUI.sendButton.setEnabled(true);
+            enableAllGameButtons();
+        }
+        else if(message.getMessage().compareTo("has disconnected.") == 0)
+        {
+            newSession = false;
+            disconnect();
+            connect();
+            ClientGUI.disableAllGameButtons();
+        }
+
+        //TODO
+
+        if (message.getMessage().equals("X"))
+        {
+            if (Gameplay.getPlayerTurn() == true)
+            {
+                if (message.getButtonID() == 1)
+                {
+                    ClientGUI.button1.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(false);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+
+                }
+                if (message.getButtonID() == 2)
+                {
+                    ClientGUI.button2.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(false);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 3)
+                {
+                    ClientGUI.button3.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(false);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 4)
+                {
+                    ClientGUI.button4.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(false);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 5)
+                {
+                    ClientGUI.button5.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(false);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 6)
+                {
+                    ClientGUI.button6.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(false);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 7)
+                {
+                    ClientGUI.button7.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(false);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 8)
+                {
+                    ClientGUI.button8.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(false);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 9)
+                {
+                    ClientGUI.button9.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(false);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+            }
+        }
+        if (message.getMessage().equals("O"))
+        {
+            if (Gameplay.getPlayerTurn() == false)
+            {
+                if (message.getButtonID() == 1)
+                {
+                    ClientGUI.button1.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(true);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 2)
+                {
+                    ClientGUI.button2.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(true);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 3)
+                {
+                    ClientGUI.button3.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(true);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 4)
+                {
+                    ClientGUI.button4.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(true);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 5)
+                {
+                    ClientGUI.button5.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(true);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 6)
+                {
+                    ClientGUI.button6.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(true);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 7)
+                {
+                    ClientGUI.button7.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(true);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 8)
+                {
+                    ClientGUI.button8.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(true);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+                if (message.getButtonID() == 9)
+                {
+                    ClientGUI.button9.setText(message.getMessage());
+                    Gameplay.setPlayerTurn(true);
+
+                    enableAllGameButtons();
+
+                    ClientGUI.gameplay.checkForWinner();
+                    disconnect();
+                }
+            }
         }
     }
 }

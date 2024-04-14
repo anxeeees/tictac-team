@@ -1,71 +1,105 @@
 package com.tictactoe.tictacteam.server;
 
-import java.io.*;
-import java.net.*;
-import com.tictactoe.tictacteam.database.DatabaseManager;
+import other.Message;
+import other.MyListener;
 
-public class ClientHandler implements Runnable {
-    private Socket clientSocket;
-    private BufferedReader in;
-    private PrintWriter out;
+import java.io.IOException;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+import java.util.Observable;
+import java.util.Observer;
 
-    public ClientHandler(Socket clientSocket) {
-        this.clientSocket = clientSocket;
-    }
+/**
+ * Created by Administrator on 9/20/2017.
+ */
+public class ClientHandler implements Observer, Runnable
+{
+    private static boolean isBothClientsConnected;
 
-    @Override
-    public void run() {
-        try {
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
+    private ObjectOutputStream client1OutStream;
+    private ObjectOutputStream client2OutStream;
 
-            // Prompt client for username
-            out.println("Enter your username:");
+    private Socket client1Socket;
+    private Socket client2Socket;
 
-            // Receive username input from client
-            String username = in.readLine().trim();
+    private MyListener listener1;
+    private MyListener listener2;
 
-            // Check if username exists in the database
-            if (!DatabaseManager.userExists(username)) {
-                // If username does not exist, add it to the database
-                DatabaseManager.addUser(username);
-                out.println("Username added to the database.");
-            } else {
-                out.println("Welcome back, " + username + "!");
-            }
-            out.println("Welcome to Tic Tac Toe!");
+    public ClientHandler(Socket clientSocket1, Socket clientSocket2)
+    {
+        this.client1Socket = clientSocket1;
+        this.client2Socket = clientSocket2;
 
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                // Handle client input
-                System.out.println("Received from client: " + inputLine);
-
-                // Example of broadcasting message to all clients
-                Server.broadcast("Client " + clientSocket + ": " + inputLine);
-
-                // Example of sending a specific message to this client
-                // out.println("Server received: " + inputLine);
-
-                // Exit condition
-                if (inputLine.equalsIgnoreCase("exit")) {
-                    break;
-                }
-            }
-
-        } catch (IOException e) {
+        try
+        {
+            client1OutStream = new ObjectOutputStream(clientSocket1.getOutputStream());
+            client2OutStream = new ObjectOutputStream(clientSocket2.getOutputStream());
+        } catch (IOException e)
+        {
             e.printStackTrace();
-        } finally {
-            try {
-                Server.removeClient(this);
-                clientSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 
+    @Override
+    public void run()
+    {
+        listener1 = new MyListener(1, client1Socket, this);
+        listener2 = new MyListener(2, client2Socket, this);
 
-    public void sendMessage(String message) {
-        out.println(message);
+        Thread thread1 = new Thread(listener1);
+        Thread thread2 = new Thread(listener2);
+        thread1.start();
+        thread2.start();
+
+
+        try
+        {
+            Message message = new Message("Connected", "you can start talking");
+
+            isBothClientsConnected = true;
+            client1OutStream.writeObject(message);
+            client2OutStream.writeObject(message);
+
+            while (client1Socket.isConnected() && client2Socket.isConnected()) ;
+
+            client1Socket.close();
+            client2Socket.close();
+            client1OutStream.close();
+            client2OutStream.close();
+
+        } catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void update(Observable o, Object arg)
+    {
+        MyListener lis = (MyListener) o;
+        Message message = (Message) arg;
+
+        try
+        {
+            if (lis.getLisNumber() == 1)
+            {
+                client2OutStream.writeObject(message);
+            }else
+            {
+                client1OutStream.writeObject(message);
+            }
+
+        } catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    public static boolean isIsBothClientsConnected()
+    {
+        return isBothClientsConnected;
     }
 }

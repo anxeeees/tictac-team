@@ -1,7 +1,5 @@
 package com.tictactoe.tictacteam.UI;
 
-import com.tictactoe.tictacteam.client.Client;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;

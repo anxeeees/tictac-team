@@ -1,39 +1,51 @@
 package com.tictactoe.tictacteam.server;
 
-import java.io.*;
-import java.net.*;
+import com.tictactoe.tictacteam.server.ClientHandler;
+import com.tictactoe.tictacteam.server.ServerGUI;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
-import java.util.List;
 
-public class Server {
-    private static final int PORT = 12345;
-    private static final List<ClientHandler> clients = new ArrayList<>();
-    private static final List<GameHandler> games = new ArrayList<>();
+/**
+ * Created by Administrator on 9/20/2017.
+ */
+public class Server
+{
+    private static ArrayList<Socket> listOfClients = new ArrayList<Socket>(2);
+    private ServerSocket serverSocket;
+    private Socket clientSocket;
 
-    public static void main(String[] args) {
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            System.out.println("Server started. Waiting for clients...");
+    public Server()
+    {
+        try
+        {
+            serverSocket = new ServerSocket(5555);
+            ServerGUI.setServerTextArea("Server Up And Running On Port 5555....\n");
+            while(true)
+            {
+                clientSocket = serverSocket.accept();
+                ServerGUI.setServerTextArea("connected waiting...\n");
+                listOfClients.add(clientSocket);
 
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                System.out.println("Client connected: " + clientSocket);
+                //see if there are 2 clients connected
+                if(listOfClients.size() == 2)
+                {
+                    ServerGUI.setServerTextArea("both clients are now connected!\n");
+                    ClientHandler clientHandler = new ClientHandler(listOfClients.get(0), listOfClients.get(1));
 
-                ClientHandler clientHandler = new ClientHandler(clientSocket);
-                clients.add(clientHandler);
-                new Thread(clientHandler).start();
+                    //create a new thread for client handler
+                    Thread clientHandlerThread = new Thread(clientHandler);
+                    clientHandlerThread.start();
+
+                    //clear list of clients to allow more 2 player connections to be made
+                    listOfClients.clear();
+                }
             }
-        } catch (IOException e) {
+        } catch (IOException e)
+        {
             e.printStackTrace();
         }
-    }
-
-    public static void broadcast(String message) {
-        for (ClientHandler client : clients) {
-            client.sendMessage(message);
-        }
-    }
-
-    public static void removeClient(ClientHandler clientHandler) {
-        clients.remove(clientHandler);
     }
 }
