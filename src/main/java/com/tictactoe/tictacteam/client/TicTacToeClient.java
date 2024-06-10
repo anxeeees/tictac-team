@@ -17,7 +17,7 @@ import javax.swing.JPanel;
 
 public class TicTacToeClient {
 
-    private JFrame frame = new JFrame("Tic Tac Toe");
+    private static JFrame frame = new JFrame("Tic Tac Toe");
     private JLabel messageLabel = new JLabel("");
     private char currentPlayerMark = 'X';
     private boolean isMyTurn = false;  // Flag to check if it's the player's turn
@@ -25,7 +25,7 @@ public class TicTacToeClient {
     private Square[] board = new Square[9];
     private Square currentSquare;
 
-    private static int PORT = 8901;
+    private static int PORT = 8080;
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
@@ -33,15 +33,40 @@ public class TicTacToeClient {
 
     Log my_log = new Log("log_client.txt");
 
-    public TicTacToeClient(String serverAddress) throws Exception {
+    public TicTacToeClient(String serverAddress, String username) throws Exception {
         // Setup networking
         socket = new Socket(serverAddress, PORT);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
 
+
         // Log connection
         my_log.logger.log(Level.INFO, "Connected to server at " + serverAddress);
 
+        // Send username to server
+        while (true) {
+            out.println(username);
+            String response = in.readLine();
+            my_log.logger.log(Level.INFO, "Received response after sending username: " + response);
+
+            if (response.startsWith("WRONG_USERNAME")) {
+                username = JOptionPane.showInputDialog(frame, "Enter your username different to that of your opponent:", "Username", JOptionPane.PLAIN_MESSAGE);
+                my_log.logger.log(Level.INFO, "Username taken, prompt user to enter different username");
+            } else {
+                if (response.startsWith("WELCOME_NEW")) {
+                    String[] parts = response.split(" ");
+                    String welcomeMessage = "Welcome to tic tac toe " + parts[1] + "!";
+                    JOptionPane.showMessageDialog(frame, welcomeMessage);
+                    my_log.logger.log(Level.INFO, "Displayed WELCOME_NEW message: " + welcomeMessage);
+                } else if (response.startsWith("WELCOME_BACK")) {
+                    String[] parts = response.split(" ");
+                    String welcomeMessage = "Welcome back " + parts[1] + "! Your current score is " + parts[2];
+                    JOptionPane.showMessageDialog(frame, welcomeMessage);
+                    my_log.logger.log(Level.INFO, "Displayed WELCOME_BACK message: " + welcomeMessage);
+                }
+                break;
+            }
+        }
         // Layout GUI
         messageLabel.setBackground(Color.lightGray);
         frame.getContentPane().add(messageLabel, "South");
@@ -52,6 +77,7 @@ public class TicTacToeClient {
         for (int i = 0; i < board.length; i++) {
             final int j = i;
             board[i] = new Square();
+
             board[i].addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {
                     if (isMyTurn && board[j].isEmpty()) {
@@ -62,6 +88,7 @@ public class TicTacToeClient {
                     }
                 }
             });
+
             boardPanel.add(board[i]);
         }
         frame.getContentPane().add(boardPanel, "Center");
@@ -158,11 +185,12 @@ public class TicTacToeClient {
         String serverAddress = (args.length == 0) ? "localhost" : args[0];
 
         while (true) {
-            TicTacToeClient client = new TicTacToeClient(serverAddress);
-            client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            client.frame.setSize(240, 160);
-            client.frame.setVisible(true);
-            client.frame.setResizable(false);
+            String username = JOptionPane.showInputDialog(frame, "Enter your username:", "Username", JOptionPane.PLAIN_MESSAGE);
+            TicTacToeClient client = new TicTacToeClient(serverAddress, username);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setSize(240, 160);
+            frame.setVisible(true);
+            frame.setResizable(false);
             client.play();
 
             if (!client.wantsToPlayAgain()) {
