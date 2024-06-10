@@ -106,21 +106,25 @@ public class TicTacToeClient {
                         my_log.logger.log(Level.INFO, "Received TIE message: " + response);
                         break;
                     } else if (response.startsWith("MESSAGE")) {
-                        messageLabel.setText(response.substring(8));
-                        my_log.logger.log(Level.INFO, "Received MESSAGE: " + response.substring(8));
+                        String messageContent = response.substring(8);
+                        if (messageContent.contains("Your opponent left the game.")) {
+                            break;
+                        } else {
+                            messageLabel.setText(messageContent);
+                            my_log.logger.log(Level.INFO, "Received MESSAGE: " + messageContent);
+                        }
                     }
                 } else {
                     my_log.logger.log(Level.SEVERE, "Server connection lost.");
                     break;
                 }
             }
-            out.println("QUIT");
-            my_log.logger.log(Level.INFO, "Sent QUIT command to server");
         } finally {
             socket.close();
             my_log.logger.log(Level.INFO, "Socket closed");
         }
     }
+
 
     private boolean wantsToPlayAgain() {
         int response = JOptionPane.showConfirmDialog(frame,
@@ -151,14 +155,16 @@ public class TicTacToeClient {
     }
 
     public static void main(String[] args) throws Exception {
+        String serverAddress = (args.length == 0) ? "localhost" : args[0];
+
         while (true) {
-            String serverAddress = (args.length == 0) ? "localhost" : args[0];
             TicTacToeClient client = new TicTacToeClient(serverAddress);
             client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             client.frame.setSize(240, 160);
             client.frame.setVisible(true);
             client.frame.setResizable(false);
             client.play();
+
             if (!client.wantsToPlayAgain()) {
                 break;
             }

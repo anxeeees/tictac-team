@@ -8,12 +8,11 @@ import java.net.Socket;
 import java.util.logging.*;
 
 public class TicTacToeServer {
-
     public static void main(String[] args) throws Exception {
         ServerSocket listener = new ServerSocket(8901);
         Log my_log = new Log("log_server.txt");
 
-       //my_log.logger(Level.INFO, "Tic Tac Toe Server is Running");
+        //my_log.logger(Level.INFO, "Tic Tac Toe Server is Running");
         try {
             while (true) {
                 Game game = new Game();
@@ -29,7 +28,6 @@ public class TicTacToeServer {
             listener.close();
         }
     }
-
 }
 
 class Game {
@@ -46,15 +44,14 @@ class Game {
 
     // winner
     public boolean hasWinner() {
-        return
-                (board[0] != null && board[0] == board[1] && board[0] == board[2])
-                        ||(board[3] != null && board[3] == board[4] && board[3] == board[5])
-                        ||(board[6] != null && board[6] == board[7] && board[6] == board[8])
-                        ||(board[0] != null && board[0] == board[3] && board[0] == board[6])
-                        ||(board[1] != null && board[1] == board[4] && board[1] == board[7])
-                        ||(board[2] != null && board[2] == board[5] && board[2] == board[8])
-                        ||(board[0] != null && board[0] == board[4] && board[0] == board[8])
-                        ||(board[2] != null && board[2] == board[4] && board[2] == board[6]);
+        return (board[0] != null && board[0] == board[1] && board[0] == board[2])
+                || (board[3] != null && board[3] == board[4] && board[3] == board[5])
+                || (board[6] != null && board[6] == board[7] && board[6] == board[8])
+                || (board[0] != null && board[0] == board[3] && board[0] == board[6])
+                || (board[1] != null && board[1] == board[4] && board[1] == board[7])
+                || (board[2] != null && board[2] == board[5] && board[2] == board[8])
+                || (board[0] != null && board[0] == board[4] && board[0] == board[8])
+                || (board[2] != null && board[2] == board[4] && board[2] == board[6]);
     }
 
     // no empty squares
@@ -66,6 +63,7 @@ class Game {
         }
         return true;
     }
+
     // thread when player tries a move
     public synchronized boolean legalMove(int location, Player player) {
         if (isGameReady && player == currentPlayer && board[location] == null) {
@@ -116,7 +114,6 @@ class Game {
                 // The thread is only started after everyone connects.
                 output.println("MESSAGE All players connected");
 
-
                 // Tell the first player that it is his/her turn.
                 if (mark == 'X') {
                     output.println("MESSAGE Your move");
@@ -126,13 +123,14 @@ class Game {
                 // Repeatedly get commands from the client and process them.
                 while (true) {
                     String command = input.readLine();
+                    if (command == null) {
+                        return;
+                    }
                     if (command.startsWith("MOVE")) {
                         int location = Integer.parseInt(command.substring(5));
                         if (legalMove(location, this)) {
                             output.println("VALID_MOVE");
-                            output.println(hasWinner() ? "VICTORY"
-                                    : boardFilledUp() ? "TIE"
-                                    : "");
+                            output.println(hasWinner() ? "VICTORY" : boardFilledUp() ? "TIE" : "");
                         } else {
                             output.println("MESSAGE ?");
                         }
@@ -146,6 +144,10 @@ class Game {
                 try {
                     socket.close();
                 } catch (IOException e) {
+                }
+                if (opponent != null) {
+                    opponent.output.println("OPPONENT_LEFT");
+                    opponent.output.println("MESSAGE Your opponent left the game. Do you want to play a new game? (YES/NO)");
                 }
             }
         }
