@@ -12,12 +12,13 @@ public class TicTacToeServer {
         ServerSocket listener = new ServerSocket(8901);
         Log my_log = new Log("log_server.txt");
 
-        //my_log.logger(Level.INFO, "Tic Tac Toe Server is Running");
         try {
+            my_log.logger.log(Level.INFO, "Tic Tac Toe Server is Running");
+
             while (true) {
-                Game game = new Game();
-                Game.Player playerX = game.new Player(listener.accept(), 'X');
-                Game.Player playerO = game.new Player(listener.accept(), 'O');
+                Game game = new Game(my_log);
+                Game.Player playerX = game.new Player(listener.accept(), 'X', my_log);
+                Game.Player playerO = game.new Player(listener.accept(), 'O', my_log);
                 playerX.setOpponent(playerO);
                 playerO.setOpponent(playerX);
                 game.currentPlayer = playerX;
@@ -30,8 +31,10 @@ public class TicTacToeServer {
     }
 }
 
+
 class Game {
     private boolean isGameReady = false;
+    private final Log my_log;
 
     // a board of 9 squares
     private Player[] board = {
@@ -41,6 +44,10 @@ class Game {
 
     //current player
     Player currentPlayer;
+
+    public Game(Log my_log) {
+        this.my_log = my_log;
+    }
 
     // winner
     public boolean hasWinner() {
@@ -81,11 +88,13 @@ class Game {
         Socket socket;
         BufferedReader input;
         PrintWriter output;
+        private final Log my_log;
 
         // thread handler to initialize stream fields
-        public Player(Socket socket, char mark) {
+        public Player(Socket socket, char mark, Log my_log) {
             this.socket = socket;
             this.mark = mark;
+            this.my_log = my_log;
             try {
                 input = new BufferedReader(
                         new InputStreamReader(socket.getInputStream()));
@@ -93,7 +102,7 @@ class Game {
                 output.println("WELCOME " + mark);
                 output.println("MESSAGE Waiting for opponent to connect");
             } catch (IOException e) {
-                System.out.println("Player died: " + e);
+                my_log.logger.log(Level.INFO, "Tic Tac Toe Server is Running");
             }
         }
 
@@ -139,7 +148,7 @@ class Game {
                     }
                 }
             } catch (IOException e) {
-                System.out.println("Player died: " + e);
+                my_log.logger.log(Level.SEVERE, "Player died: " + e);
             } finally {
                 try {
                     socket.close();
