@@ -19,8 +19,6 @@ public class TicTacToeServer {
                 Game game = new Game(my_log);
                 Game.Player playerX = game.new Player(listener.accept(), 'X', my_log, null);
                 Game.Player playerO = game.new Player(listener.accept(), 'O', my_log, playerX);
-
-
                 playerX.setOpponent(playerO);
                 game.currentPlayer = playerX;
                 playerX.start();

@@ -17,7 +17,7 @@ import javax.swing.JPanel;
 
 public class TicTacToeClient {
 
-    private static JFrame frame = new JFrame("Tic Tac Toe");
+    private JFrame frame = new JFrame("Tic Tac Toe");
     private JLabel messageLabel = new JLabel("");
     private char currentPlayerMark = 'X';
     private boolean isMyTurn = false;  // Flag to check if it's the player's turn
@@ -185,12 +185,15 @@ public class TicTacToeClient {
         String serverAddress = (args.length == 0) ? "localhost" : args[0];
 
         while (true) {
-            String username = JOptionPane.showInputDialog(frame, "Enter your username:", "Username", JOptionPane.PLAIN_MESSAGE);
+            JFrame tempFrame = new JFrame();
+            String username = JOptionPane.showInputDialog(tempFrame, "Enter your username:", "Username", JOptionPane.PLAIN_MESSAGE);
+            tempFrame.dispose();  // Dispose the temporary frame after use
+
             TicTacToeClient client = new TicTacToeClient(serverAddress, username);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(240, 160);
-            frame.setVisible(true);
-            frame.setResizable(false);
+            client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            client.frame.setSize(240, 160);
+            client.frame.setVisible(true);
+            client.frame.setResizable(false);
             client.play();
 
             if (!client.wantsToPlayAgain()) {
