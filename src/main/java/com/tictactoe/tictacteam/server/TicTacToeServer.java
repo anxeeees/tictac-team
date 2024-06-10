@@ -33,6 +33,8 @@ public class TicTacToeServer {
 }
 
 class Game {
+    private boolean isGameReady = false;
+
     // a board of 9 squares
     private Player[] board = {
             null, null, null,
@@ -66,7 +68,7 @@ class Game {
     }
     // thread when player tries a move
     public synchronized boolean legalMove(int location, Player player) {
-        if (player == currentPlayer && board[location] == null) {
+        if (isGameReady && player == currentPlayer && board[location] == null) {
             board[location] = currentPlayer;
             currentPlayer = currentPlayer.opponent;
             currentPlayer.otherPlayerMoved(location);
@@ -114,9 +116,11 @@ class Game {
                 // The thread is only started after everyone connects.
                 output.println("MESSAGE All players connected");
 
+
                 // Tell the first player that it is his/her turn.
                 if (mark == 'X') {
                     output.println("MESSAGE Your move");
+                    isGameReady = true;
                 }
 
                 // Repeatedly get commands from the client and process them.
