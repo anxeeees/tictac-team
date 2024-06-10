@@ -8,6 +8,8 @@ Tento projekt implementuje multiplayerovou hru Tic Tac Toe s architekturou klien
 
 - Java Development Kit (JDK) 11 nebo vyšší
 - Nástroj pro sestavení Maven
+- Pro správnou komunikaci s databází tohoto projektu je nutné mít nainstalovaný MySQL klient.
+ A v database.properties změnit přihlašovací údaje
 
 ## Pokyny ke hře
 

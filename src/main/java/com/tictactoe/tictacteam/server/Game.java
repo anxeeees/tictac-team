@@ -10,24 +10,38 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.logging.Level;
 
+/**
+ * The Game class represents a single game of Tic Tac Toe being played between two players.
+ * It manages the game state, including the game board, player moves, and determining the winner.
+ * This class also handles communication between players via sockets.
+ *
+ * @author Robert Čuda
+ * @author Ester Stankovsá
+ */
 public class Game {
     private boolean isGameReady = false;
     private final Log my_log;
-
-    // a board of 9 squares
     private Player[] board = {
             null, null, null,
             null, null, null,
             null, null, null};
 
-    //current player
     Player currentPlayer;
 
+    /**
+     * Constructs a new Game object with the specified log.
+     *
+     * @param my_log The Log object used for logging messages.
+     */
     public Game(Log my_log) {
         this.my_log = my_log;
     }
 
-    // winner
+    /**
+     * Checks if there is a winner in the current game state.
+     *
+     * @return true if there is a winner, false otherwise.
+     */
     public boolean hasWinner() {
         return (board[0] != null && board[0] == board[1] && board[0] == board[2])
                 || (board[3] != null && board[3] == board[4] && board[3] == board[5])
@@ -39,7 +53,11 @@ public class Game {
                 || (board[2] != null && board[2] == board[4] && board[2] == board[6]);
     }
 
-    // no empty squares
+     /**
+     * Checks if the game board is completely filled up with player marks.
+     *
+     * @return true if the board is filled up, false otherwise.
+     */
     public boolean boardFilledUp() {
         for (int i = 0; i < board.length; i++) {
             if (board[i] == null) {
@@ -49,7 +67,14 @@ public class Game {
         return true;
     }
 
-    // thread when player tries a move
+    /**
+     * Checks if a move at the given location is legal for the current player.
+     * A move is legal if the game is ready, it's the current player's turn, and the specified location is empty.
+     *
+     * @param location The location where the player wants to make a move.
+     * @param player   The player attempting the move.
+     * @return true if the move is legal, false otherwise.
+     */
     public synchronized boolean legalMove(int location, Player player) {
         if (isGameReady && player == currentPlayer && board[location] == null) {
             board[location] = currentPlayer;
@@ -59,7 +84,10 @@ public class Game {
         }
         return false;
     }
-
+    /**
+     * The Player class represents a player participating in a Tic Tac Toe game.
+     * It handles communication with the player via sockets and processes their moves.
+     */
     class Player extends Thread {
         char mark;
         Player opponent;
@@ -69,7 +97,14 @@ public class Game {
         PrintWriter output;
         private final Log my_log;
 
-        // thread handler to initialize stream fields
+        /**
+         * Constructs a new Player object with the specified socket, mark, log, and opponent.
+         *
+         * @param socket   The socket connected to the player.
+         * @param mark     The mark (X or O) assigned to the player.
+         * @param my_log   The Log object used for logging messages.
+         * @param opponent The opponent Player object.
+         */
         public Player(Socket socket, char mark, Log my_log, Player opponent) {
             this.socket = socket;
             this.mark = mark;
@@ -111,13 +146,21 @@ public class Game {
             this.opponent = opponent;
         }
 
-        //Handles the otherPlayerMoved message.
+        /**
+         * Notifies the player about the opponent's move.
+         *
+         * @param location The location where the opponent made the move.
+         */
         public void otherPlayerMoved(int location) {
             output.println("OPPONENT_MOVED " + location);
             output.println(
                     hasWinner() ? "DEFEAT" : boardFilledUp() ? "TIE" : "");
         }
 
+        /**
+         * Runs the player's thread, handling communication with the client and processing moves.
+         * The thread is started after all players are connected.
+         */
         public void run() {
             try {
                 // The thread is only started after everyone connects.
