@@ -1,5 +1,7 @@
 package com.tictactoe.tictacteam.server;
 
+import com.tictactoe.tictacteam.Log;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -7,14 +9,11 @@ import java.util.logging.*;
 
 public class TicTacToeServer {
 
-    static final Logger logger = Logger.getLogger(TicTacToeServer.class.getName());
-    private static FileHandler fileHandler;
-
     public static void main(String[] args) throws Exception {
-        setupLogging();
-
         ServerSocket listener = new ServerSocket(8901);
-        logger.log(Level.INFO, "Tic Tac Toe Server is Running");
+        Log my_log = new Log("log_server.txt");
+
+       //my_log.logger(Level.INFO, "Tic Tac Toe Server is Running");
         try {
             while (true) {
                 Game game = new Game();
@@ -31,22 +30,6 @@ public class TicTacToeServer {
         }
     }
 
-    private static void setupLogging() {
-        try {
-            // Configure logger to write to a file
-            fileHandler = new FileHandler("server_log.txt");
-            SimpleFormatter formatter = new SimpleFormatter();
-            fileHandler.setFormatter(formatter);
-            logger.addHandler(fileHandler);
-            // Configure logger to write to console as well
-            ConsoleHandler consoleHandler = new ConsoleHandler();
-            consoleHandler.setLevel(Level.ALL);
-            logger.addHandler(consoleHandler);
-            logger.setLevel(Level.ALL);
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Error setting up logging", e);
-        }
-    }
 }
 
 class Game {
@@ -111,7 +94,6 @@ class Game {
                 output.println("MESSAGE Waiting for opponent to connect");
             } catch (IOException e) {
                 System.out.println("Player died: " + e);
-                TicTacToeServer.logger.log(Level.SEVERE, "Player died: ", e);
             }
         }
 
@@ -156,12 +138,10 @@ class Game {
                 }
             } catch (IOException e) {
                 System.out.println("Player died: " + e);
-                TicTacToeServer.logger.log(Level.SEVERE, "Player died: ", e);
             } finally {
                 try {
                     socket.close();
                 } catch (IOException e) {
-                    TicTacToeServer.logger.log(Level.SEVERE, "Error closing socket", e);
                 }
             }
         }

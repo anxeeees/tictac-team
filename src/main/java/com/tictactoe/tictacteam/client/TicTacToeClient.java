@@ -1,5 +1,7 @@
 package com.tictactoe.tictacteam.client;
 
+import com.tictactoe.tictacteam.Log;
+
 import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
@@ -27,8 +29,8 @@ public class TicTacToeClient {
     private BufferedReader in;
     private PrintWriter out;
 
-    private static final Logger logger = Logger.getLogger(TicTacToeClient.class.getName());
-    private static FileHandler fileHandler;
+    Log my_log = new Log("log_client.txt");
+
 
     public TicTacToeClient(String serverAddress) throws Exception {
         // Setup networking
@@ -37,8 +39,8 @@ public class TicTacToeClient {
                 socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
 
-        // Setup logging
-        setupLogging();
+        my_log.logger.log(Level.INFO, "Connected to server at " + serverAddress);
+
 
         // Layout GUI
         messageLabel.setBackground(Color.lightGray);
@@ -54,7 +56,7 @@ public class TicTacToeClient {
                 public void mousePressed(MouseEvent e) {
                     currentSquare = board[j];
                     out.println("MOVE " + j);
-                    logger.log(Level.INFO, "Sent MOVE command to server");
+                    my_log.logger.log(Level.INFO, "Sent MOVE command to server: MOVE " + j);
                 }
             });
             boardPanel.add(board[i]);
@@ -70,9 +72,11 @@ public class TicTacToeClient {
                 char mark = response.charAt(8);
                 currentPlayerMark = mark; // Set player's mark according to server message
                 frame.setTitle("Tic Tac Toe - Player " + mark);
+                my_log.logger.log(Level.INFO, "Received WELCOME message: " + response);
             }
             while (true) {
                 response = in.readLine();
+                my_log.logger.log(Level.INFO, "Received response: " + response);
                 if (response.startsWith("VALID_MOVE")) {
                     messageLabel.setText("Valid move, please wait");
                     currentSquare.setText(String.valueOf(currentPlayerMark));
@@ -96,29 +100,13 @@ public class TicTacToeClient {
                 }
             }
             out.println("QUIT");
-            logger.log(Level.INFO, "Sent QUIT command to server");
+            my_log.logger.log(Level.INFO, "Sent QUIT command to server");
         } finally {
             socket.close();
-            logger.log(Level.INFO, "Socket closed");
+            my_log.logger.log(Level.INFO, "Socket closed");
         }
     }
 
-    private void setupLogging() {
-        try {
-            // Configure logger to write to a file
-            fileHandler = new FileHandler("client_log.txt");
-            SimpleFormatter formatter = new SimpleFormatter();
-            fileHandler.setFormatter(formatter);
-            logger.addHandler(fileHandler);
-            // Configure logger to write to console as well
-            ConsoleHandler consoleHandler = new ConsoleHandler();
-            consoleHandler.setLevel(Level.ALL);
-            logger.addHandler(consoleHandler);
-            logger.setLevel(Level.ALL);
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "Error setting up logging", e);
-        }
-    }
 
     private boolean wantsToPlayAgain() {
         int response = JOptionPane.showConfirmDialog(frame,
