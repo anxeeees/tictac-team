@@ -15,14 +15,14 @@ import javax.swing.JPanel;
 
 public class TicTacToeClient {
 
-    private JFrame frame = new JFrame("Tic Tac Toe");
+    private static JFrame frame = new JFrame("Tic Tac Toe");
     private JLabel messageLabel = new JLabel("");
     private char currentPlayerMark = 'X';
 
     private Square[] board = new Square[9];
     private Square currentSquare;
 
-    private static int PORT = 8901;
+    private static int PORT = 8080;
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
@@ -30,17 +30,37 @@ public class TicTacToeClient {
     private static final Logger logger = Logger.getLogger(TicTacToeClient.class.getName());
     private static FileHandler fileHandler;
 
-    public TicTacToeClient(String serverAddress) throws Exception {
-        // Setup networking
+    public TicTacToeClient(String serverAddress, String username) throws Exception {
         socket = new Socket(serverAddress, PORT);
-        in = new BufferedReader(new InputStreamReader(
-                socket.getInputStream()));
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
 
-        // Setup logging
+        // Send username to server
+        while (true) {
+            out.println(username);
+            if (in.readLine().startsWith("WRONG_USERNAME")) {
+                username = JOptionPane.showInputDialog(frame, "Enter your username different to that of your opponent:", "Username", JOptionPane.PLAIN_MESSAGE);
+            } else {
+                break;
+            }
+        }
+
         setupLogging();
 
-        // Layout GUI
+        // Read welcome message from server
+        String response = in.readLine();
+        if (response.startsWith("WELCOME_NEW")) {
+            String[] parts = response.split(" ");
+            String welcomeMessage = "Welcome to tic tac toe " + parts[1] + "!";
+            // Display welcome message for new user
+            JOptionPane.showMessageDialog(frame, welcomeMessage);
+        } else if (response.startsWith("WELCOME_BACK")) {
+            String[] parts = response.split(" ");
+            String welcomeMessage = "Welcome back " + parts[1] + "! Your current score is " + parts[2];
+            // Display welcome message for returning user
+            JOptionPane.showMessageDialog(frame, welcomeMessage);
+        }
+
         messageLabel.setBackground(Color.lightGray);
         frame.getContentPane().add(messageLabel, "South");
 
@@ -145,11 +165,13 @@ public class TicTacToeClient {
     public static void main(String[] args) throws Exception {
         while (true) {
             String serverAddress = (args.length == 0) ? "localhost" : args[1];
-            TicTacToeClient client = new TicTacToeClient(serverAddress);
-            client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            client.frame.setSize(240, 160);
-            client.frame.setVisible(true);
-            client.frame.setResizable(false);
+            // Prompt the user to enter their username
+            String username = JOptionPane.showInputDialog(frame, "Enter your username:", "Username", JOptionPane.PLAIN_MESSAGE);
+            TicTacToeClient client = new TicTacToeClient(serverAddress, username);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setSize(240, 160);
+            frame.setVisible(true);
+            frame.setResizable(false);
             client.play();
             if (!client.wantsToPlayAgain()) {
                 break;

@@ -1,11 +1,32 @@
 package com.tictactoe.tictacteam.database;
 
+import java.io.InputStream;
 import java.sql.*;
+import java.util.Properties;
 
 public class DatabaseManager {
-    private static final String URL = "jdbc:mysql://localhost:3306/tictactoe";
-    private static final String USERNAME = "root";
-    private static final String PASSWORD = "Robert2002";
+    private static String URL;
+    private static String USERNAME;
+    private static String PASSWORD;
+    static {
+        try (InputStream input = DatabaseManager.class.getClassLoader().getResourceAsStream("database.properties")) {
+            Properties prop = new Properties();
+            System.out.println(1);
+            if (input == null) {
+                throw new RuntimeException("Sorry, unable to find database.properties");
+            }
+            // Load the properties file
+            prop.load(input);
+            System.out.println(2);
+            // Get the property values
+            URL = prop.getProperty("db.url");
+            USERNAME = prop.getProperty("db.username");
+            PASSWORD = prop.getProperty("db.password");
+            System.out.println(3);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
 
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USERNAME, PASSWORD);
@@ -44,5 +65,20 @@ public class DatabaseManager {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public static int getScore(String username) {
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement("SELECT score FROM users WHERE username = ?")) {
+            statement.setString(1, username);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt("score");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 }
