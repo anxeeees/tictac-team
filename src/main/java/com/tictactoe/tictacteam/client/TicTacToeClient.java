@@ -15,6 +15,15 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+/**
+ * TicTacToeClient class represents a client for playing Tic Tac Toe game.
+ * This class establishes a connection with the server, handles user input,
+ * and displays the game interface.
+ *
+ * @author Robert Čuda
+ * @author Ester Stankovská
+ */
+
 public class TicTacToeClient {
 
     private JFrame frame = new JFrame("Tic Tac Toe");
@@ -25,7 +34,7 @@ public class TicTacToeClient {
     private Square[] board = new Square[9];
     private Square currentSquare;
 
-    private static int PORT = 8901;
+    private static int PORT = 8080;
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
@@ -33,16 +42,49 @@ public class TicTacToeClient {
 
     Log my_log = new Log("log_client.txt");
 
-    public TicTacToeClient(String serverAddress) throws Exception {
+    /**
+     * Constructs a TicTacToeClient object with the specified server address and username.
+     * Initializes the networking components, prompts the user for a username, and sets up the game interface.
+     *
+     * @param serverAddress The address of the server to connect to.
+     * @param username      The username chosen by the player.
+     * @throws Exception if there's an error during initialization or communication with the server.
+     */
+    public TicTacToeClient(String serverAddress, String username) throws Exception {
         // Setup networking
         socket = new Socket(serverAddress, PORT);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
 
+
         // Log connection
         my_log.logger.log(Level.INFO, "Connected to server at " + serverAddress);
 
-        // Layout GUI
+        // Send username to server
+        while (true) {
+            out.println(username);
+            String response = in.readLine();
+            my_log.logger.log(Level.INFO, "Received response after sending username: " + response);
+
+            if (response.startsWith("WRONG_USERNAME")) {
+                username = JOptionPane.showInputDialog(frame, "Enter your username different to that of your opponent:", "Username", JOptionPane.PLAIN_MESSAGE);
+                my_log.logger.log(Level.INFO, "Username taken, prompt user to enter different username");
+            } else {
+                if (response.startsWith("WELCOME_NEW")) {
+                    String[] parts = response.split(" ");
+                    String welcomeMessage = "Welcome to tic tac toe " + parts[1] + "!";
+                    JOptionPane.showMessageDialog(frame, welcomeMessage);
+                    my_log.logger.log(Level.INFO, "Displayed WELCOME_NEW message: " + welcomeMessage);
+                } else if (response.startsWith("WELCOME_BACK")) {
+                    String[] parts = response.split(" ");
+                    String welcomeMessage = "Welcome back " + parts[1] + "! Your current score is " + parts[2];
+                    JOptionPane.showMessageDialog(frame, welcomeMessage);
+                    my_log.logger.log(Level.INFO, "Displayed WELCOME_BACK message: " + welcomeMessage);
+                }
+                break;
+            }
+        }
+
         messageLabel.setBackground(Color.lightGray);
         frame.getContentPane().add(messageLabel, "South");
 
@@ -52,31 +94,37 @@ public class TicTacToeClient {
         for (int i = 0; i < board.length; i++) {
             final int j = i;
             board[i] = new Square();
+
             board[i].addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent e) {
                     if (isMyTurn && board[j].isEmpty()) {
                         currentSquare = board[j];
                         out.println("MOVE " + j);
                         my_log.logger.log(Level.INFO, "Sent MOVE command to server: MOVE " + j);
-                        isMyTurn = false; // Disable further moves until it's player's turn again
+                        isMyTurn = false;
                     }
                 }
             });
+
             boardPanel.add(board[i]);
         }
         frame.getContentPane().add(boardPanel, "Center");
     }
-
+    /**
+     * Initiates the game logic. Handles incoming messages from the server and updates the game state accordingly.
+     *
+     * @throws Exception if there's an error during communication with the server.
+     */
     public void play() throws Exception {
         String response;
         try {
             response = in.readLine();
             if (response.startsWith("WELCOME")) {
                 char mark = response.charAt(8);
-                currentPlayerMark = mark; // Set player's mark according to server message
+                currentPlayerMark = mark;
                 frame.setTitle("Tic Tac Toe - Player " + mark);
                 my_log.logger.log(Level.INFO, "Received WELCOME message: " + response);
-                isMyTurn = (mark == 'X'); // 'X' starts the game
+                isMyTurn = (mark == 'X');
             }
             while (true) {
                 response = in.readLine();
@@ -92,7 +140,7 @@ public class TicTacToeClient {
                         board[loc].repaint();
                         messageLabel.setText("Opponent moved, your turn");
                         my_log.logger.log(Level.INFO, "Received OPPONENT_MOVED message: " + response);
-                        isMyTurn = true; // Enable player's turn
+                        isMyTurn = true;
                     } else if (response.startsWith("VICTORY")) {
                         messageLabel.setText("You win");
                         my_log.logger.log(Level.INFO, "Received VICTORY message: " + response);
@@ -126,6 +174,11 @@ public class TicTacToeClient {
     }
 
 
+    /**
+     * Prompts the player whether they want to play again after the game ends.
+     *
+     * @return true if the player wants to play again, false otherwise.
+     */
     private boolean wantsToPlayAgain() {
         int response = JOptionPane.showConfirmDialog(frame,
                 "Want to play again?",
@@ -136,7 +189,12 @@ public class TicTacToeClient {
         frame.dispose();
         return playAgain;
     }
-
+    /**
+     * Represents a square in the Tic Tac Toe game board.
+     *
+     * @author Robert Čuda
+     * @author Ester Stankovská
+     */
     static class Square extends JPanel {
         JLabel label = new JLabel();
 
@@ -145,20 +203,41 @@ public class TicTacToeClient {
             add(label);
         }
 
+        /**
+         * Sets the text content of the square.
+         *
+         * @param text The text to set in the square.
+         */
         public void setText(String text) {
             label.setText(text);
         }
-
+        /**
+         * Checks if the square is empty.
+         *
+         * @return true if the square is empty, false otherwise.
+         */
         public boolean isEmpty() {
             return label.getText().isEmpty();
         }
     }
 
+    /**
+     * The main method to start the Tic Tac Toe client.
+     * Prompts the user for the server address and username, creates a client object,
+     * and starts the game loop.
+     *
+     * @param args Command line arguments (not used).
+     * @throws Exception if there's an error during client initialization or gameplay.
+     */
     public static void main(String[] args) throws Exception {
         String serverAddress = (args.length == 0) ? "localhost" : args[0];
 
         while (true) {
-            TicTacToeClient client = new TicTacToeClient(serverAddress);
+            JFrame tempFrame = new JFrame();
+            String username = JOptionPane.showInputDialog(tempFrame, "Enter your username:", "Username", JOptionPane.PLAIN_MESSAGE);
+            tempFrame.dispose();
+
+            TicTacToeClient client = new TicTacToeClient(serverAddress, username);
             client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             client.frame.setSize(240, 160);
             client.frame.setVisible(true);
